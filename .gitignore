@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# Claude
+.claude/
+
+# External extensions (reference only)
+*.popclipextz
+
+# Logs
+*.log
+
+# Temp files
+/tmp/
+
+# Swift build artifacts
+MakeScheduleUI/.build/
+MakeScheduleUI/.swiftpm/
+
+# Compiled binary in extension (built from source)
+MakeSchedule.popclipext/MakeScheduleUI

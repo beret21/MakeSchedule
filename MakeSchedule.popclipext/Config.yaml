@@ -1,0 +1,29 @@
+# ═══════════════════════════════════════════════════════════════
+# MakeSchedule PopClip Extension Configuration (v3)
+# ═══════════════════════════════════════════════════════════════
+# 설명: 선택한 텍스트에서 일정을 추출하여 Calendar.app에 등록
+#
+# 워크플로우:
+#   텍스트 선택 → Gemini API → 편집 대화상자 → Calendar.app 등록
+# ═══════════════════════════════════════════════════════════════
+
+name: MakeSchedule
+identifier: com.beret21.makeschedule
+description: 선택한 텍스트에서 일정을 추출하여 캘린더에 등록합니다.
+icon: preserve-color file:icon.svg
+popclip version: 4586
+
+options:
+  - identifier: geminiApiKey
+    type: secret
+    label: Gemini API Key
+    description: Google AI Studio에서 발급받은 API 키
+
+actions:
+  - title: 일정 등록
+    icon: preserve-color file:icon.svg
+    shell script file: extract_and_open.sh
+    after: show-status
+
+entitlements:
+  - network
