@@ -24,6 +24,7 @@ actions:
     icon: preserve-color file:icon.svg
     shell script file: extract_and_open.sh
     after: show-status
+    restore pasteboard: true
 
 entitlements:
   - network

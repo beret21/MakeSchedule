@@ -44,41 +44,59 @@ struct ScheduleFormView: View {
                     .padding(.top, 20)
                     .padding(.bottom, 14)
 
-                // MARK: - Content Card
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        // Title section
-                        titleSection
-
-                        sectionDivider
-
-                        // Date & Time section
-                        dateTimeSection
-
-                        sectionDivider
-
-                        // Details section
-                        detailsSection
-
-                        sectionDivider
-
-                        // Calendar section
-                        calendarSection
+                if calendarManager.authorizationChecked && !calendarManager.accessGranted {
+                    // 권한 거부 시 전체 화면 단계별 안내
+                    Spacer()
+                    permissionDeniedView
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Button(action: handleCancel) {
+                            Text("닫기")
+                                .frame(width: 72)
+                        }
+                        .keyboardShortcut(.cancelAction)
+                        .controlSize(.large)
                     }
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(nsColor: .controlBackgroundColor))
-                            .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 2)
-                    )
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 4)
-                }
-
-                Spacer(minLength: 8)
-
-                // MARK: - Footer buttons
-                footerButtons
+                    .padding(.horizontal, 24)
                     .padding(.bottom, 16)
+                } else {
+                    // MARK: - Content Card
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: 0) {
+                            // Title section
+                            titleSection
+
+                            sectionDivider
+
+                            // Date & Time section
+                            dateTimeSection
+
+                            sectionDivider
+
+                            // Details section
+                            detailsSection
+
+                            sectionDivider
+
+                            // Calendar section
+                            calendarSection
+                        }
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color(nsColor: .controlBackgroundColor))
+                                .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 2)
+                        )
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 4)
+                    }
+
+                    Spacer(minLength: 8)
+
+                    // MARK: - Footer buttons
+                    footerButtons
+                        .padding(.bottom, 16)
+                }
             }
         }
         .frame(width: 520, height: 620)
@@ -89,17 +107,78 @@ struct ScheduleFormView: View {
         .onChange(of: calendarManager.calendars) { cals in
             selectDefaultCalendar(from: cals)
         }
-        .onChange(of: calendarManager.errorMessage) { msg in
-            if let msg = msg {
-                errorText = msg
-                showError = true
-            }
-        }
         .alert("오류", isPresented: $showError) {
             Button("확인") {}
         } message: {
             Text(errorText)
         }
+    }
+
+    // MARK: - Permission Denied View
+
+    private var permissionDeniedView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "calendar.badge.exclamationmark")
+                .font(.system(size: 44))
+                .foregroundColor(.secondary)
+
+            Text("캘린더 접근 권한이 필요합니다")
+                .font(.title3.weight(.semibold))
+
+            VStack(alignment: .leading, spacing: 16) {
+                // Step 1
+                HStack(alignment: .top, spacing: 10) {
+                    Text("1.")
+                        .font(.callout.weight(.bold))
+                        .foregroundColor(accentOrange)
+                        .frame(width: 20, alignment: .trailing)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("아래 버튼으로 시스템 설정을 열고,\nPopClip에 **'전체 캘린더 접근'** 권한을\n허용해 주세요.")
+                            .font(.callout)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        Button(action: {
+                            calendarManager.openSystemSettings()
+                        }) {
+                            HStack(spacing: 6) {
+                                Image(systemName: "gear")
+                                Text("시스템 설정 열기")
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(accentOrange)
+                        .controlSize(.regular)
+                    }
+                }
+
+                // Step 2
+                HStack(alignment: .top, spacing: 10) {
+                    Text("2.")
+                        .font(.callout.weight(.bold))
+                        .foregroundColor(accentOrange)
+                        .frame(width: 20, alignment: .trailing)
+                    Text("권한 설정 후 PopClip이 자동으로\n재실행됩니다.")
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                // Step 3
+                HStack(alignment: .top, spacing: 10) {
+                    Text("3.")
+                        .font(.callout.weight(.bold))
+                        .foregroundColor(accentOrange)
+                        .frame(width: 20, alignment: .trailing)
+                    Text("이 창을 닫고, 텍스트를 다시 선택하여\nMakeSchedule을 실행해 주세요.")
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.horizontal, 8)
+        }
+        .padding(.horizontal, 40)
     }
 
     // MARK: - Header
@@ -304,33 +383,69 @@ struct ScheduleFormView: View {
     // MARK: - Calendar Section
 
     private var calendarSection: some View {
-        HStack(spacing: 8) {
-            sectionLabel("캘린더", icon: "calendar")
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                sectionLabel("캘린더", icon: "calendar")
 
-            if calendarManager.calendars.isEmpty {
-                ProgressView()
-                    .controlSize(.small)
-                Text("로딩 중...")
-                    .foregroundColor(.secondary)
-                    .font(.callout)
-            } else {
-                Picker("", selection: $selectedCalendarID) {
-                    ForEach(calendarManager.calendars,
-                            id: \.calendarIdentifier) { cal in
-                        HStack(spacing: 6) {
-                            Circle()
-                                .fill(Color(cgColor: cal.cgColor))
-                                .frame(width: 10, height: 10)
-                            Text(cal.title)
+                if !calendarManager.authorizationChecked {
+                    // 아직 권한 확인 중
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("로딩 중...")
+                        .foregroundColor(.secondary)
+                        .font(.callout)
+                } else if !calendarManager.accessGranted {
+                    // 권한 거부됨
+                    Text("접근 권한 없음")
+                        .foregroundColor(.red)
+                        .font(.callout)
+                } else if calendarManager.calendars.isEmpty {
+                    // 권한은 있지만 쓰기 가능한 캘린더 없음
+                    Text("사용 가능한 캘린더가 없습니다")
+                        .foregroundColor(.secondary)
+                        .font(.callout)
+                } else {
+                    Picker("", selection: $selectedCalendarID) {
+                        ForEach(calendarManager.calendars,
+                                id: \.calendarIdentifier) { cal in
+                            HStack(spacing: 6) {
+                                Circle()
+                                    .fill(Color(cgColor: cal.cgColor))
+                                    .frame(width: 10, height: 10)
+                                Text(cal.title)
+                            }
+                            .tag(cal.calendarIdentifier)
                         }
-                        .tag(cal.calendarIdentifier)
                     }
+                    .labelsHidden()
+                    .frame(maxWidth: 220)
                 }
-                .labelsHidden()
-                .frame(maxWidth: 220)
+
+                Spacer()
             }
 
-            Spacer()
+            // 권한 거부 시 안내 메시지
+            if calendarManager.authorizationChecked && !calendarManager.accessGranted {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("시스템 설정 > 개인정보 보호 및 보안 > 캘린더에서\nPopClip에 접근 권한을 허용해 주세요.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Button(action: {
+                        calendarManager.openSystemSettings()
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "gear")
+                                .font(.caption)
+                            Text("시스템 설정 열기")
+                                .font(.caption)
+                        }
+                    }
+                    .buttonStyle(.link)
+                }
+                .padding(.leading, 28)
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -357,7 +472,7 @@ struct ScheduleFormView: View {
             .buttonStyle(.borderedProminent)
             .tint(accentOrange)
             .controlSize(.large)
-            .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
+            .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty || calendarManager.calendars.isEmpty)
         }
         .padding(.horizontal, 24)
     }

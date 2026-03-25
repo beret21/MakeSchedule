@@ -18,6 +18,10 @@ notify() {
     osascript -e "display notification \"$2\" with title \"$1\""
 }
 
+alert() {
+    osascript -e "display dialog \"$2\" with title \"$1\" buttons {\"확인\"} default button \"확인\" with icon caution"
+}
+
 # ═══════════════════════════════════════════════════════════════
 # API 키 확인
 # ═══════════════════════════════════════════════════════════════
@@ -34,7 +38,7 @@ PYTHON_PATH="/opt/anaconda3/bin/python3"
 [ ! -f "$PYTHON_PATH" ] && PYTHON_PATH=$(which python3 2>/dev/null)
 
 if [ -z "$PYTHON_PATH" ] || [ ! -f "$PYTHON_PATH" ]; then
-    notify "MakeSchedule 오류" "Python3를 찾을 수 없습니다."
+    alert "MakeSchedule 오류" "Python3를 찾을 수 없습니다."
     exit 1
 fi
 
@@ -58,7 +62,7 @@ if [ ! -f "$SETUP_MARKER" ]; then
             notify "MakeSchedule" "설치 완료! 다시 시도해주세요."
             exit 0
         fi
-        notify "MakeSchedule 오류" "패키지 설치 실패"
+        alert "MakeSchedule 오류" "패키지 설치 실패"
         exit 1
     else
         touch "$SETUP_MARKER"
@@ -69,7 +73,7 @@ fi
 # 선택 텍스트 확인 (PopClip이 $POPCLIP_TEXT로 전달)
 # ═══════════════════════════════════════════════════════════════
 if [ -z "$POPCLIP_TEXT" ]; then
-    notify "MakeSchedule 오류" "선택된 텍스트가 없습니다."
+    alert "MakeSchedule 오류" "선택된 텍스트가 없습니다."
     exit 1
 fi
 
@@ -87,19 +91,25 @@ echo "$(date): JSON: $JSON_RESULT" >> "$LOG_FILE"
 
 if [ $EXIT_CODE -ne 0 ] || [ -z "$JSON_RESULT" ]; then
     case $EXIT_CODE in
-        2) notify "MakeSchedule 오류" "API 키를 확인해주세요." ;;
-        3) notify "MakeSchedule 오류" "API 한도 초과." ;;
-        4) notify "MakeSchedule 오류" "네트워크 오류." ;;
-        *) notify "MakeSchedule 오류" "일정 추출 실패." ;;
+        2) alert "MakeSchedule 오류" "API 키를 확인해주세요." ;;
+        3) alert "MakeSchedule 오류" "API 한도 초과." ;;
+        4) alert "MakeSchedule 오류" "네트워크 오류." ;;
+        5) alert "MakeSchedule" "선택한 텍스트에서 일정 정보를 찾을 수 없습니다." ;;
+        *) alert "MakeSchedule 오류" "일정 추출 실패." ;;
     esac
     exit 1
 fi
 
 # ═══════════════════════════════════════════════════════════════
+# 캘린더 접근 권한 트리거 (PopClip → Calendar.app 자동화 권한)
+# ═══════════════════════════════════════════════════════════════
+osascript -e 'tell application "Calendar" to name of calendars' > /dev/null 2>&1
+echo "$(date): Calendar AppleScript trigger done" >> "$LOG_FILE"
+
+# ═══════════════════════════════════════════════════════════════
 # SwiftUI 대화상자로 검수/편집 + EventKit 캘린더 등록
 # ═══════════════════════════════════════════════════════════════
 UI_PATH="$SCRIPT_DIR/MakeScheduleUI"
-
 echo "$(date): Opening SwiftUI dialog..." >> "$LOG_FILE"
 DIALOG_RESULT=$(echo "$JSON_RESULT" | "$UI_PATH" 2>> "$LOG_FILE")
 DIALOG_EXIT=$?
@@ -120,7 +130,7 @@ if [ "$STATUS" = "OK" ]; then
     echo "$(date): Registered to [$CAL_NAME]" >> "$LOG_FILE"
     exit 0
 else
-    notify "MakeSchedule 오류" "캘린더 등록 실패."
+    alert "MakeSchedule 오류" "캘린더 등록 실패."
     echo "$(date): ERROR - Registration failed" >> "$LOG_FILE"
     exit 1
 fi

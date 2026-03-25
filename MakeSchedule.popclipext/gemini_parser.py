@@ -45,6 +45,9 @@ JSON 필드:
 예시 2 (여러 날 종일 일정):
 {{"title": "제주 워크숍", "start_date": "2026-04-10", "start_time": "", "end_date": "2026-04-12", "end_time": "", "all_day": true, "location": "제주 컨벤션센터", "notes": "숙소: OO호텔\\n준비물: 노트북"}}
 
+텍스트에서 일정 정보를 찾을 수 없으면 다음 JSON을 출력:
+{{"error": "일정 정보를 찾을 수 없습니다."}}
+
 유효한 JSON만 출력. 마크다운 코드블록이나 설명 없이."""
 
 
@@ -74,6 +77,14 @@ def extract_schedule(api_key, text):
             result = '\n'.join(lines[1:])
 
     data = json.loads(result)
+
+    # Gemini가 일정을 찾지 못한 경우
+    if data.get("error"):
+        print(
+            f"ERROR: {data['error']}",
+            file=sys.stderr
+        )
+        sys.exit(5)
 
     # 필수 필드 확인
     if not data.get("title") or not data.get("start_date"):

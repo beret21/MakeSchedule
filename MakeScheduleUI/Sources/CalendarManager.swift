@@ -5,6 +5,7 @@ class CalendarManager: ObservableObject {
     let store = EKEventStore()
     @Published var calendars: [EKCalendar] = []
     @Published var accessGranted = false
+    @Published var authorizationChecked = false
     @Published var errorMessage: String?
 
     func requestAccess() {
@@ -12,11 +13,12 @@ class CalendarManager: ObservableObject {
             store.requestFullAccessToEvents { granted, error in
                 DispatchQueue.main.async {
                     self.accessGranted = granted
+                    self.authorizationChecked = true
                     if granted {
                         self.loadCalendars()
                     } else {
                         self.errorMessage = error?.localizedDescription
-                            ?? "캘린더 접근 권한이 거부되었습니다.\n시스템 설정 > 개인정보 보호 > 캘린더에서 권한을 허용해 주세요."
+                            ?? "캘린더 접근 권한이 거부되었습니다."
                     }
                 }
             }
@@ -24,14 +26,21 @@ class CalendarManager: ObservableObject {
             store.requestAccess(to: .event) { granted, error in
                 DispatchQueue.main.async {
                     self.accessGranted = granted
+                    self.authorizationChecked = true
                     if granted {
                         self.loadCalendars()
                     } else {
                         self.errorMessage = error?.localizedDescription
-                            ?? "캘린더 접근 권한이 거부되었습니다.\n시스템 설정 > 개인정보 보호 > 캘린더에서 권한을 허용해 주세요."
+                            ?? "캘린더 접근 권한이 거부되었습니다."
                     }
                 }
             }
+        }
+    }
+
+    func openSystemSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Calendars") {
+            NSWorkspace.shared.open(url)
         }
     }
 

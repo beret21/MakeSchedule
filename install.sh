@@ -55,11 +55,21 @@ fi
 
 # 3. PopClip Extension 설치
 echo ""
-echo "📎 PopClip Extension 설치..."
-open "$EXT_DIR"
-echo ""
-echo "═══════════════════════════════════════════════"
-echo "  PopClip 대화상자에서 Install을 클릭하세요."
-echo "  설치 후 PopClip 설정에서 Gemini API Key를 입력하세요."
-echo "  API Key: https://aistudio.google.com/"
-echo "═══════════════════════════════════════════════"
+if [ -d "/Applications/PopClip.app" ] || [ -d "$HOME/Applications/PopClip.app" ]; then
+    echo "📎 PopClip Extension 설치..."
+    open "$EXT_DIR"
+    echo ""
+    echo "═══════════════════════════════════════════════"
+    echo "  PopClip 대화상자에서 Install을 클릭하세요."
+    echo "  설치 후 PopClip 설정에서 Gemini API Key를 입력하세요."
+    echo "  API Key: https://aistudio.google.com/"
+    echo "═══════════════════════════════════════════════"
+else
+    echo "⚠️  PopClip이 설치되어 있지 않습니다."
+    echo "   https://www.popclip.app/ 에서 설치 후 다시 실행하세요."
+    echo ""
+    echo "   빌드는 완료되었으므로 PopClip 설치 후"
+    echo "   다음 명령으로 Extension만 설치할 수 있습니다:"
+    echo "   open \"$EXT_DIR\""
+    exit 1
+fi
